@@ -8,18 +8,16 @@ import time
 
 # Импортируем всё из пакета src
 from src import (
-    USER_ID,
-    MESSAGE_TEXT,
-    COOKIES_FILE,
-    setup_driver,
-    check_auth,
-    handle_auth,
-    find_message_input,
-    send_message_safely,
-    go_to_dialog,
-    save_cookies,
-    clear_browser_data,
-    remove_cookies_file
+    USER_IDS,                    # Получатели
+    MESSAGE_TEXT,                # Текст сообщения
+    COOKIES_FILE,                # Файл для cookies
+    DELAY_BETWEEN_MESSAGES,      # Задержка
+    setup_driver,                # Запуск браузера
+    check_auth,                  # Проверка авторизации
+    handle_auth,                 # Авторизация
+    send_messages_to_multiple,   # Отправка сообщений
+    save_cookies,                # Сохранение cookies
+    logger                       # Логирование
 )
 
 
@@ -43,72 +41,53 @@ def main():
     driver = None  # Инициализируем драйвер для использования в finally
     
     try:
-        # ШАГ 1: НАСТРОЙКА И ЗАПУСК БРАУЗЕРА
+        logger.info("=" * 50)
+        logger.info("🚀 ЗАПУСК СКРИПТА")
+        logger.info("=" * 50)
+        logger.info(f"Получатели: {USER_IDS}")
+        logger.info(f"Текст: {MESSAGE_TEXT[:50]}...")
+        
+        # 1. Запускаем браузер
         driver = setup_driver()
-        print("Открыл ВК")
-        
-        # ШАГ 2: ОТКРЫТИЕ ВКОНТАКТЕ
         driver.get("https://vk.com/")
-        wait = WebDriverWait(driver, 15)  # Таймаут ожидания 15 секунд
-        time.sleep(3)  # Даём время на загрузку
+        wait = WebDriverWait(driver, 15)
+        time.sleep(DELAY_BETWEEN_MESSAGES)
         
-        # ШАГ 3: АВТОРИЗАЦИЯ
+        # 2. Авторизация
         if not handle_auth(driver):
-            print("❌ Авторизация не удалась. Завершаю работу.")
+            logger.error("❌ Авторизация не удалась")
             return False
         
-        # ШАГ 4: ПРОВЕРКА АВТОРИЗАЦИИ
         if not check_auth(driver):
-            print("⚠️ Вы не авторизованы! Попробуйте перезапустить скрипт.")
-            print("Если ошибка повторяется, удалите папку chrome_profile и файл cookies")
-            input("Нажмите Enter для выхода...")
+            logger.error("❌ Пользователь не авторизован")
             return False
         
-        # ШАГ 5: ПЕРЕХОД В ДИАЛОГ
-        if not go_to_dialog(driver, USER_ID):
-            # Если не удалось перейти в диалог, очищаем данные
-            clear_browser_data(driver)
-            driver.delete_all_cookies()
-            remove_cookies_file(COOKIES_FILE)
-            print("Удалите папку chrome_profile и перезапустите скрипт")
-            return False
+        logger.info("✅ Авторизация успешна")
         
-        # ШАГ 6: ОТПРАВКА СООБЩЕНИЯ
-        print("\nИщу поле ввода сообщения...")
-        message_input = find_message_input(driver, wait)
-        
-        if message_input:
-            # Поле найдено - отправляем сообщение
-            success = send_message_safely(driver, message_input, MESSAGE_TEXT)
-            if success:
-                print("\n✅ Сообщение успешно отправлено!")
-            else:
-                print("\n❌ Не удалось отправить сообщение")
-        else:
-            # Поле не найдено
-            print("❌ Не удалось найти поле ввода")
-            print("💡 Подсказка: обновите селекторы поля ввода")
-        
-        # ШАГ 7: ОЖИДАНИЕ РЕЗУЛЬТАТА
-        print("\nОжидание 5 секунд...")
-        time.sleep(5)  # Даём время увидеть результат в браузере
+        # 3. Отправка сообщений
+        results = send_messages_to_multiple(driver, USER_IDS, MESSAGE_TEXT, wait)
+
+        # 4. Статистика
+        success_count = sum(1 for v in results.values() if v)
+        logger.info("=" * 50)
+        logger.info(f"✅ Успешно: {success_count}/{len(USER_IDS)}")
+        logger.info("=" * 50)
         
         return True
         
     except Exception as e:
         # Обработка непредвиденных ошибок
-        print(f"❌ Произошла ошибка: {e}")
+        logger.error(f"❌ Произошла ошибка: {e}")
         return False
     
     finally:
-        # ШАГ 8: ЗАВЕРШЕНИЕ РАБОТЫ
         if driver:
             # Сохраняем актуальные cookies перед закрытием
             save_cookies(driver, COOKIES_FILE)
             
             # Закрываем браузер
             driver.quit()
-            print("\nБраузер закрыт")
+            logger.info("Браузер закрыт")
 
 
 # ТОЧКА ВХОДА В ПРОГРАММУ

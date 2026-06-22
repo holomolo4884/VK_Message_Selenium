@@ -1,11 +1,14 @@
 """
 Настройка и запуск браузера Chrome.
-Содержит конфигурацию для маскировки автоматизации.
+
+Содержит конфигурацию для маскировки автоматизации,
+чтобы сайты не могли определить, что используется Selenium.
 """
 
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from src.config import PROFILE_DIR, HEADLESS_MODE
+from src.logger import logger
 import os
 
 
@@ -13,26 +16,38 @@ def setup_driver():
     """
     Настраивает и запускает драйвер Chrome с маскировкой.
     
-    Возвращает:
-        WebDriver: настроенный экземпляр драйвера
-    
     Особенности:
         - Создаёт отдельный профиль Chrome для сохранения сессии
-        - Маскирует признаки автоматизации (чтобы сайты не блокировали)
+        - Маскирует признаки автоматизации
         - Отключает уведомления и всплывающие окна
+        - Поддерживает headless-режим
+    
+    Возвращает:
+        WebDriver: настроенный экземпляр драйвера
     """
     
     # Создаём папку для профиля, если её нет
     if not os.path.exists(PROFILE_DIR):
         os.makedirs(PROFILE_DIR)
+        logger.debug(f"📁 Создана папка профиля: {PROFILE_DIR}")
     
     # Настройки для маскировки под реального пользователя
     options = Options()
     
-    # Скрываем признаки автоматизации
+    # ============================================================
+    # МАСКИРОВКА ПРИЗНАКОВ АВТОМАТИЗАЦИИ
+    # ============================================================
+    
+    # Скрываем флаг автоматизации
     options.add_argument("--disable-blink-features=AutomationControlled")
+    
+    # Отключаем автоматизацию в настройках
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option('useAutomationExtension', False)
+    
+    # ============================================================
+    # НАСТРОЙКИ ДЛЯ УДОБСТВА
+    # ============================================================
     
     # Отключаем лишние уведомления
     options.add_argument("--disable-notifications")
@@ -41,21 +56,40 @@ def setup_driver():
     # Отключаем GPU для стабильности
     options.add_argument("--disable-gpu")
     
+    # Добавляем аргументы для решения проблемы DevToolsActivePort
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--remote-debugging-port=9222")
+
+    # ============================================================
+    # ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+    # ============================================================
+    
     # Используем профиль пользователя для сохранения сессии
     # Благодаря этому не нужно входить каждый раз
     options.add_argument(f"--user-data-dir={PROFILE_DIR}")
     
+    # ============================================================
+    # HEADLESS РЕЖИМ
+    # ============================================================
+    
     # Если включён headless-режим, браузер работает в фоне
     if HEADLESS_MODE:
         options.add_argument("--headless")
+        logger.debug("🖥️  Запуск в headless-режиме (браузер не виден)")
     
-    # Запускаем браузер
+    # ============================================================
+    # ЗАПУСК БРАУЗЕРА
+    # ============================================================
+    
+    # Запускаем браузер с настройками
     driver = webdriver.Chrome(options=options)
     
-    
+    # ============================================================
     # МАСКИРОВКА WEBDRIVER (обход антибот-систем)
-
-    # Первая маскировка: удаляем свойство webdriver
+    # ============================================================
+    
+    # Первая маскировка: удаляем свойство webdriver у navigator
     driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {
         'source': '''
             Object.defineProperty(navigator, 'webdriver', {
@@ -70,7 +104,7 @@ def setup_driver():
             // Удаляем navigator.webdriver
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
             
-            // Добавляем chrome (обычно есть у реальных пользователей)
+            // Добавляем объект chrome (обычно есть у реальных пользователей)
             window.chrome = { runtime: {} };
             
             // Маскируем разрешения (permissions)
@@ -83,4 +117,5 @@ def setup_driver():
         '''
     })
     
+    logger.debug("✅ Браузер запущен и настроен")
     return driver

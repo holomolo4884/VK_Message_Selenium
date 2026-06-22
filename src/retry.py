@@ -6,9 +6,10 @@
 import time
 from functools import wraps
 from src.logger import logger
+from src.config import MAX_RETRIES
 
 
-def retry(max_attempts=3, delay=2, backoff=2, exceptions=(Exception,)):
+def retry(max_attempts=MAX_RETRIES, delay=2, backoff=2, exceptions=(Exception,)):
     """
     Декоратор для повторных попыток выполнения функции.
     
@@ -17,11 +18,6 @@ def retry(max_attempts=3, delay=2, backoff=2, exceptions=(Exception,)):
         delay: задержка между попытками (сек)
         backoff: множитель увеличения задержки
         exceptions: кортеж исключений, при которых нужно повторять
-    
-    Пример:
-        @retry(max_attempts=5, delay=1)
-        def unstable_function():
-            ...
     """
     def decorator(func):
         @wraps(func)

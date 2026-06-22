@@ -6,15 +6,7 @@
 import logging
 import os
 from datetime import datetime
-
-# Папка для логов
-LOG_DIR = os.path.join(os.getcwd(), "logs")
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-
-# Имя файла лога с датой
-LOG_FILE = os.path.join(LOG_DIR, f"vk_auto_{datetime.now().strftime("%y-%m-%d")}.log")
-
+from src.config import LOG_DIR
 
 def setup_logger(name="VK_Auto"):
     """
@@ -35,6 +27,10 @@ def setup_logger(name="VK_Auto"):
     if logger.handlers:
         return logger
     
+    # Имя файла лога с датой
+    log_file = os.path.join(LOG_DIR, f"vk_auto_{datetime.now().strftime("%y-%m-%d")}.log")
+
+
     # Формат сообщений
     formatter = logging.Formatter(
         '%(asctime)s | %(levelname)-8s | %(name)s | %(message)s',
@@ -42,7 +38,7 @@ def setup_logger(name="VK_Auto"):
     )
 
     # Обработчик для файла (все уровни)
-    file_handler = logging.FileHandler(LOG_FILE, encoding='utf-8')
+    file_handler = logging.FileHandler(log_file, encoding='utf-8')
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
 

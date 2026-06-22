@@ -5,6 +5,7 @@
 
 import os
 import pickle  # Для сериализации cookies в файл
+from src.logger import logger
 
 
 def save_cookies(driver, cookies_file):
@@ -26,10 +27,10 @@ def save_cookies(driver, cookies_file):
         with open(cookies_file, 'wb') as file:
             pickle.dump(cookies, file)
         
-        print("✅ Cookies сохранены")
+        logger.debug("✅ Cookies сохранены")
         return True
     except Exception as e:
-        print(f"❌ Не удалось сохранить cookies: {e}")
+        logger.error(f"❌ Не удалось сохранить cookies: {e}")
         return False
 
 
@@ -48,7 +49,7 @@ def load_cookies(driver, cookies_file):
     if not os.path.exists(cookies_file):
         return False
     
-    print("Нашёл файл с cookies, загружаю...")
+    logger.debug("Нашёл файл с cookies, загружаю...")
     
     try:
         # Загружаем cookies из файла
@@ -71,12 +72,12 @@ def load_cookies(driver, cookies_file):
                     # Игнорируем ошибки отдельных cookies
                     pass
         
-        print("Cookies загружены, обновляю страницу...")
+        logger.debug("Cookies загружены, обновляю страницу...")
         driver.refresh()  # Обновляем страницу, чтобы применить cookies
         return True
         
     except Exception as e:
-        print(f"❌ Ошибка при загрузке cookies: {e}")
+        logger.error(f"❌ Ошибка при загрузке cookies: {e}")
         return False
 
 
@@ -104,10 +105,10 @@ def clear_browser_data(driver):
             'storageTypes': 'all'
         })
         
-        print("✅ Данные браузера очищены")
+        logger.debug("✅ Данные браузера очищены")
         return True
     except Exception as e:
-        print(f"❌ Не удалось очистить данные браузера: {e}")
+        logger.error(f"❌ Не удалось очистить данные браузера: {e}")
         return False
 
 
@@ -123,6 +124,6 @@ def remove_cookies_file(cookies_file):
     """
     if os.path.exists(cookies_file):
         os.remove(cookies_file)
-        print("Файл cookies удалён")
+        logger.info("Файл cookies удалён")
         return True
     return False
