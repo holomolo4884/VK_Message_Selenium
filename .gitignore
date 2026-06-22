@@ -1,0 +1,42 @@
+# Виртуальное окружение
+.venv/
+venv/
+env/
+
+# Файлы IDE
+.vscode/
+.idea/
+*.iml
+
+# Профиль Chrome (важно! не пушить в Git)
+chrome_profile/
+
+# Файлы с данными (не пушить!)
+vk_cookies.pkl
+*.pkl
+*.log
+*.db
+*.sqlite
+
+# Папки с данными
+logs/
+attachments/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Переменные окружения (содержат пароли!)
+.env
+.env.local
+.env.*.local
+
+# Файлы отчётов
+*.html
+*.json
+*.csv
+
+# Системные файлы
+.DS_Store
+Thumbs.db
+desktop.ini
